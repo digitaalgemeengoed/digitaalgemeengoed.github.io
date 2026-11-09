@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Office Assistent · Digitaal GemeenGoed</title>
+<meta name="description" content="De Office Assistent: een open-source assistent in de tekstverwerker, het rekenblad en de presentatie voor gemeenten. Werkend prototype van Digitaal GemeenGoed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eaeff0; --surface:#ffffff; --surface2:#f3f7f7; --line:#d3dcde; --fg:#15262b; --muted:#536970;
+  --accent:#0d6470; --accent-fg:#ffffff; --accent-soft:#dcedef;
+  --amber:#8f5400; --amber-soft:#fbefd6; --violet:#5b3fa6; --violet-soft:#ebe5f8;
+  --blue:#2c5c9c; --blue-soft:#e1eaf7; --green:#1b6f3f; --green-soft:#def2e5; --rose:#9c3a69; --rose-soft:#f7e3ec;
+  --shadow:0 10px 30px rgba(10,40,46,.12);
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --serif:'IBM Plex Serif',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--accent)}
+a:hover{color:var(--fg)}
+code{font:0.88em var(--mono);background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+/* taal: alleen de gekozen taal tonen */
+html[lang="nl"] [lang="en"]:not(html), html[lang="en"] [lang="nl"]:not(html){display:none!important}
+
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.kop{display:flex;align-items:center;gap:14px;padding:16px 0 10px}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font:700 22px var(--sans);flex:none}
+.kop h1{margin:0;font:600 1.35rem var(--serif);letter-spacing:.2px}
+.kop .sub{color:var(--muted);font-size:.9rem}
+.kop .ruimte{flex:1}
+.taal{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.taal button{border:0;background:transparent;font:500 .82rem var(--sans);padding:6px 10px;cursor:pointer;color:var(--muted)}
+.taal button[aria-pressed="true"]{background:var(--accent);color:#fff}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{border:0;background:transparent;font:500 .95rem var(--sans);color:var(--muted);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible,.taal button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+main.wrap{padding:36px 20px 56px;flex:1;width:100%}
+section[role="tabpanel"]{display:none}
+section[role="tabpanel"].actief{display:block}
+h2{font:600 1.6rem/1.25 var(--serif);margin:0 0 10px}
+h3{font-size:1.08rem;margin:26px 0 8px}
+p.lead{font-size:1.12rem;max-width:760px}
+.let{background:var(--amber-soft);border-left:4px solid var(--amber);padding:10px 14px;border-radius:6px;margin:18px 0;max-width:760px}
+
+.kaarten{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:18px 0}
+.kaart{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.kaart h4{margin:0 0 6px;font-size:1rem;display:flex;align-items:center;gap:8px}
+.kaart p{margin:0;color:var(--muted);font-size:.93rem}
+.pil{font:600 .72rem var(--sans);padding:2px 8px;border-radius:99px;background:var(--green-soft);color:var(--green);margin-left:auto;white-space:nowrap}
+.pil.volgt{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+
+.knoppen{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}
+.knop{display:inline-block;text-decoration:none;font-weight:600;padding:10px 16px;border-radius:8px;border:2px solid var(--accent);color:var(--accent);background:var(--surface)}
+.knop.hoofd{background:var(--accent);color:#fff}
+.knop:hover{background:var(--accent-soft);color:var(--accent)}
+.knop.hoofd:hover{background:#0a4f59;color:#fff}
+
+table{border-collapse:collapse;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.93rem}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--surface2);font-weight:600}
+tr:last-child td{border-bottom:0}
+.tabel{overflow-x:auto;margin:12px 0}
+
+.plaat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin:16px 0;overflow-x:auto}
+.plaat svg{display:block;min-width:760px;width:100%;height:auto}
+.legenda{color:var(--muted);font-size:.88rem;margin-top:6px}
+
+.rol{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:16px 0}
+.rol .kaart h4{font-size:1.05rem}
+.rol ol{margin:8px 0 0;padding-left:20px;font-size:.93rem}
+.rol li{margin:3px 0}
+.rol code{overflow-wrap:anywhere}
+
+footer{border-top:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.88rem}
+footer .wrap{padding:18px 20px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+footer button{border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+
+dialog{border:0;border-radius:14px;padding:0;max-width:600px;width:calc(100% - 32px);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(10,30,35,.45)}
+dialog .in{padding:22px 24px}
+dialog h2{font-size:1.3rem}
+dialog .sluit{float:right;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit}
+
+@media (max-width:640px){
+  .kop .sub{display:none}
+  h2{font-size:1.35rem}
+}
+@media (prefers-reduced-motion:no-preference){ section[role="tabpanel"].actief{animation:in .18s ease-out} }
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="kop">
+      <div class="logo" aria-hidden="true">A</div>
+      <div>
+        <h1>Office Assistent</h1>
+        <div class="sub"><span lang="nl">Digitaal GemeenGoed · werkend prototype</span><span lang="en">Digitaal GemeenGoed · working prototype</span></div>
+      </div>
+      <div class="ruimte"></div>
+      <div class="taal" role="group" aria-label="Taal / Language">
+        <button type="button" data-taal="nl" aria-pressed="true">NL</button>
+        <button type="button" data-taal="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Onderdelen">
+      <button role="tab" id="t-overzicht" aria-controls="overzicht" aria-selected="true"><span lang="nl">Overzicht</span><span lang="en">Overview</span></button>
+      <button role="tab" id="t-architectuur" aria-controls="architectuur" aria-selected="false"><span lang="nl">Architectuur</span><span lang="en">Architecture</span></button>
+      <button role="tab" id="t-techniek" aria-controls="techniek" aria-selected="false"><span lang="nl">Techniek</span><span lang="en">Engineering</span></button>
+      <button role="tab" id="t-aandeslag" aria-controls="aandeslag" aria-selected="false"><span lang="nl">Aan de slag</span><span lang="en">Get started</span></button>
+      <button role="tab" id="t-repositories" aria-controls="repositories" aria-selected="false">Repositories</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================ OVERZICHT ============================ -->
+<section id="overzicht" role="tabpanel" aria-labelledby="t-overzicht" class="actief">
+  <h2><span lang="nl">Kwaliteit aan de bron, in de software die je al gebruikt</span><span lang="en">Quality at the source, in the software you already use</span></h2>
+  <p class="lead">
+    <span lang="nl">De Office Assistent is een paneel naast je document in Word, Excel, PowerPoint, LibreOffice en Collabora Online. Het helpt een medewerker om een stuk meteen goed vast te leggen: met de juiste metadata, toegankelijk volgens WCAG en zonder persoonsgegevens waar die niet horen. Overal hetzelfde paneel, van dezelfde server.</span>
+    <span lang="en">The Office Assistant is a panel beside your document in Word, Excel, PowerPoint, LibreOffice and Collabora Online. It helps an employee get a document right from the start: the right metadata, accessible under WCAG, and no personal data where it doesn't belong. The same panel everywhere, served from the same server.</span>
+  </p>
+  <div class="let">
+    <span lang="nl"><b>Een prototype, geen product.</b> Gemaakt bij de gemeente Haarlem om de architectuur van <a href="https://eha-1999.github.io/MIRA/">MIRA</a> te beproeven. Gebruik alleen testgegevens.</span>
+    <span lang="en"><b>A prototype, not a product.</b> Built at the municipality of Haarlem to put the <a href="https://eha-1999.github.io/MIRA/">MIRA</a> architecture to the test. Use test data only.</span>
+  </div>
+
+  <div class="knoppen">
+    <a class="knop hoofd" href="#aandeslag" data-naar="aandeslag"><span lang="nl">Aan de slag</span><span lang="en">Get started</span></a>
+    <a class="knop" href="https://eha-1999.github.io/MIRA/"><span lang="nl">Bekijk de demo (MIRA)</span><span lang="en">See the demo (MIRA)</span></a>
+    <a class="knop" href="https://github.com/digitaalgemeengoed/oa-uitrol"><span lang="nl">Broncode op GitHub</span><span lang="en">Source on GitHub</span></a>
+  </div>
+
+  <h3><span lang="nl">Wat het paneel doet</span><span lang="en">What the panel does</span></h3>
+  <div class="kaarten">
+    <div class="kaart"><h4><span lang="nl">Metadateren</span><span lang="en">Metadata</span><span class="pil"><span lang="nl">werkt</span><span lang="en">works</span></span></h4>
+      <p><span lang="nl">Zakelijk of persoonlijk, en voor zakelijke stukken de kenmerken volgens MDTO en de Woo, met voorstellen die je overneemt of aanpast.</span><span lang="en">Business or personal, and for business documents the attributes under MDTO and the Woo, with suggestions you accept or change.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Toegankelijkheid</span><span lang="en">Accessibility</span><span class="pil"><span lang="nl">werkt</span><span lang="en">works</span></span></h4>
+      <p><span lang="nl">Controle tegen WCAG 2.2 AA: koppen, alternatieve tekst, linkteksten, tabellen, taal, contrast. Veel is met één klik in het document te herstellen.</span><span lang="en">Checks against WCAG 2.2 AA: headings, alt text, link text, tables, language, contrast. Much of it can be fixed in the document with one click.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Anonimiseren</span><span lang="en">Anonymisation</span><span class="pil"><span lang="nl">werkt</span><span lang="en">works</span></span></h4>
+      <p><span lang="nl">Persoonsgegevens worden in het document zelf vervangen door plaatshouders. De originelen gaan versleuteld per AVG-categorie naar een register; inzien hangt af van je niveau.</span><span lang="en">Personal data is replaced by placeholders in the document itself. Originals are encrypted per GDPR category into a register; who may view them depends on their level.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Overzicht en versies</span><span lang="en">Overview and versions</span><span class="pil"><span lang="nl">werkt</span><span lang="en">works</span></span></h4>
+      <p><span lang="nl">Status, versies en wat er nog openstaat. Elke vastlegging is een gebeurtenis die niet meer verandert.</span><span lang="en">Status, versions and what is still open. Every change is recorded as an event that never changes.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Classificeren</span><span lang="en">Classification</span><span class="pil volgt"><span lang="nl">volgt</span><span lang="en">planned</span></span></h4>
+      <p><span lang="nl">Openbaarheid en bewaring, met de bron van elke waarde.</span><span lang="en">Disclosure and retention, with the source of every value.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Waarmerken</span><span lang="en">Sealing</span><span class="pil volgt"><span lang="nl">volgt</span><span lang="en">planned</span></span></h4>
+      <p><span lang="nl">Vastleggen dat een versie echt is en sindsdien niet is gewijzigd, namens jezelf of de organisatie.</span><span lang="en">Recording that a version is authentic and unchanged since, on your own behalf or the organisation's.</span></p></div>
+  </div>
+
+  <h3><span lang="nl">Waar het werkt</span><span lang="en">Where it works</span></h3>
+  <div class="tabel"><table>
+    <tr><th><span lang="nl">Werkomgeving</span><span lang="en">Environment</span></th><th><span lang="nl">Hoe</span><span lang="en">How</span></th></tr>
+    <tr><td>Microsoft Word, Excel, PowerPoint</td><td><span lang="nl">Invoegtoepassing met een eigen tabblad Assistent; ook in de webversie.</span><span lang="en">Add-in with its own Assistant tab; also in the web version.</span></td></tr>
+    <tr><td>LibreOffice Writer, Calc, Impress</td><td><span lang="nl">Extensie: het paneel in de zijbalk en een werkbalk Assistent. Linux, Windows en Mac (de laatste twee als proef).</span><span lang="en">Extension: the panel in the sidebar and an Assistant toolbar. Linux, Windows and Mac (the latter two as a trial).</span></td></tr>
+    <tr><td>Collabora Online</td><td><span lang="nl">LibreOffice in de browser, met het paneel ernaast en de knoppen in de werkbalk.</span><span lang="en">LibreOffice in the browser, with the panel beside it and the buttons in the toolbar.</span></td></tr>
+    <tr><td><span lang="nl">Demo in de browser</span><span lang="en">Browser demo</span></td><td><span lang="nl">Een eenvoudige tekstverwerker om alles zonder installatie te proberen.</span><span lang="en">A simple word processor to try everything without installing anything.</span></td></tr>
+  </table></div>
+</section>
+
+<!-- ============================ ARCHITECTUUR ============================ -->
+<section id="architectuur" role="tabpanel" aria-labelledby="t-architectuur">
+  <h2><span lang="nl">Eén paneel, één integratielaag, twee ingangen</span><span lang="en">One panel, one integration layer, two entrances</span></h2>
+  <p class="lead">
+    <span lang="nl">Het paneel is overal hetzelfde; alleen een dunne adapter per werkomgeving verschilt. De browser praat alleen met de integratielaag. Die weet wie er belt en stuurt elke vraag naar de juiste ingang: <b>lezend</b> (vragen, controles, voorstellen; legt nooit iets vast) of <b>vastleggend</b> (registreren, metadata, versies; elke aanroep wordt een gebeurtenis).</span>
+    <span lang="en">The panel is the same everywhere; only a thin adapter per environment differs. The browser talks only to the integration layer. It knows who is calling and routes each request to the right entrance: <b>reading</b> (questions, checks, suggestions; never commits) or <b>recording</b> (registering, metadata, versions; every call becomes an event).</span>
+  </p>
+
+  <div class="plaat">
+  <svg viewBox="0 0 980 476" role="img" aria-labelledby="arch-t arch-d">
+    <title id="arch-t">Architectuur van de Office Assistent</title>
+    <desc id="arch-d">Werkomgevingen met het paneel praten met de integratielaag op VPS 1. Die stuurt lezende vragen naar de assistent-diensten op VPS 3 en vastleggende naar het platform op VPS 2. Keycloak op VPS 3 regelt het inloggen; OpenBao de sleutels.</desc>
+    <defs>
+      <marker id="pijl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#536970"/></marker>
+    </defs>
+    <style>
+      .bx{fill:#fff;stroke:#d3dcde;stroke-width:1.5}
+      .vps{fill:#f3f7f7;stroke:#d3dcde;stroke-dasharray:5 4}
+      .t{font:600 14px 'IBM Plex Sans',sans-serif;fill:#15262b}
+      .s{font:12px 'IBM Plex Sans',sans-serif;fill:#536970}
+      .v{font:600 11px 'IBM Plex Mono',monospace;fill:#536970;letter-spacing:.5px}
+      .l{stroke:#536970;stroke-width:1.6;fill:none}
+      .lees{stroke:#2c5c9c}.vast{stroke:#1b6f3f}.auth{stroke:#5b3fa6;stroke-dasharray:5 4}
+      .lt{font:600 11.5px 'IBM Plex Sans',sans-serif}
+    </style>
+
+    <!-- werkomgevingen -->
+    <rect x="20" y="40" width="190" height="390" rx="12" class="vps"/>
+    <text x="34" y="62" class="v">WERKOMGEVINGEN</text>
+    <rect x="34" y="78" width="162" height="62" rx="9" class="bx"/><text x="46" y="102" class="t">Word · Excel</text><text x="46" y="120" class="s">PowerPoint (Office.js)</text>
+    <rect x="34" y="152" width="162" height="62" rx="9" class="bx"/><text x="46" y="176" class="t">LibreOffice</text><text x="46" y="194" class="s">extensie, zijbalk</text>
+    <rect x="34" y="226" width="162" height="62" rx="9" class="bx"/><text x="46" y="250" class="t">Collabora Online</text><text x="46" y="268" class="s">via WOPI</text>
+    <rect x="34" y="300" width="162" height="50" rx="9" class="bx"/><text x="46" y="330" class="t">Demo (browser)</text>
+    <rect x="34" y="364" width="162" height="52" rx="9" fill="#dcedef" stroke="#0d6470"/><text x="46" y="386" class="t" fill="#0d6470">Paneel</text><text x="46" y="403" class="s">React · NL Design System</text>
+
+    <!-- VPS 1 -->
+    <rect x="260" y="40" width="210" height="390" rx="12" class="vps"/>
+    <text x="274" y="62" class="v">VPS 1 · TOEGANG</text>
+    <rect x="274" y="78" width="182" height="50" rx="9" class="bx"/><text x="286" y="100" class="t">Caddy</text><text x="286" y="117" class="s">HTTPS, het enige van buiten</text>
+    <rect x="274" y="142" width="182" height="120" rx="9" fill="#fff" stroke="#0d6470" stroke-width="2"/>
+    <text x="286" y="166" class="t">Integratielaag</text><text x="286" y="184" class="s">Next.js · sessie, routes</text>
+    <text x="286" y="214" class="lt" fill="#2c5c9c">lezende ingang</text>
+    <text x="286" y="240" class="lt" fill="#1b6f3f">vastleggende ingang</text>
+    <rect x="274" y="276" width="182" height="50" rx="9" class="bx"/><text x="286" y="298" class="t">Collabora Online</text><text x="286" y="315" class="s">de editor in de browser</text>
+    <rect x="274" y="340" width="182" height="74" rx="9" class="bx"/><text x="286" y="362" class="t">Beheerportaal</text><text x="286" y="380" class="s">accounts, groepen, audit</text><text x="286" y="398" class="s">eigen database</text>
+
+    <!-- VPS 2 -->
+    <rect x="520" y="40" width="210" height="390" rx="12" class="vps"/>
+    <text x="534" y="62" class="v">VPS 2 · PLATFORM</text>
+    <rect x="534" y="78" width="182" height="96" rx="9" fill="#fff" stroke="#1b6f3f" stroke-width="2"/><text x="546" y="102" class="t">Object Service</text><text x="546" y="120" class="s">opendop-mini · Fastify</text><text x="546" y="138" class="s">versies, gebeurtenissen,</text><text x="546" y="156" class="s">PII-register</text>
+    <rect x="534" y="188" width="182" height="58" rx="9" class="bx"/><text x="546" y="212" class="t">PostgreSQL 16</text><text x="546" y="230" class="s">gescheiden per gemeente</text>
+    <rect x="534" y="260" width="182" height="58" rx="9" class="bx"/><text x="546" y="284" class="t">SILO (S3)</text><text x="546" y="302" class="s">met Object Lock</text>
+    <rect x="534" y="332" width="182" height="50" rx="9" class="bx"/><text x="546" y="354" class="t">OpenSearch</text><text x="546" y="371" class="s">optioneel</text>
+
+    <!-- VPS 3 -->
+    <rect x="770" y="40" width="190" height="390" rx="12" class="vps"/>
+    <text x="784" y="62" class="v">VPS 3 · DIENSTEN</text>
+    <rect x="784" y="78" width="162" height="58" rx="9" fill="#fff" stroke="#2c5c9c" stroke-width="2"/><text x="796" y="102" class="t">Assistent-diensten</text><text x="796" y="120" class="s">lezen en rekenen</text>
+    <rect x="784" y="148" width="162" height="50" rx="9" class="bx"/><text x="796" y="170" class="t">OpenAnonymiser</text><text x="796" y="187" class="s">Presidio, spaCy</text>
+    <rect x="784" y="210" width="162" height="50" rx="9" class="bx"/><text x="796" y="232" class="t">oa-wcag</text><text x="796" y="249" class="s">Java · docx, xlsx, pptx</text>
+    <rect x="784" y="272" width="162" height="58" rx="9" fill="#fff" stroke="#5b3fa6" stroke-width="2"/><text x="796" y="296" class="t">Keycloak</text><text x="796" y="314" class="s">inloggen, rollen, 2FA</text>
+    <rect x="784" y="342" width="162" height="58" rx="9" class="bx"/><text x="796" y="366" class="t">OpenBao</text><text x="796" y="384" class="s">sleutels per document</text>
+
+    <!-- lijnen -->
+    <path d="M196 251 H274" class="l" marker-end="url(#pijl)"/>
+    <path d="M115 364 V352" class="l" stroke-dasharray="3 3"/>
+    <path d="M196 390 C235 390 235 200 274 200" class="l" marker-end="url(#pijl)"/>
+    <path d="M456 210 H500 V28 H745 V107 H784" class="l lees" marker-end="url(#pijl)"/>
+    <path d="M456 236 H512 V126 H534" class="l vast" marker-end="url(#pijl)"/>
+    <path d="M456 168 H488 V14 H758 V301 H784" class="l auth" marker-end="url(#pijl)"/>
+    <path d="M716 150 H751 V371 H784" class="l" stroke-dasharray="3 3" marker-end="url(#pijl)"/>
+    <path d="M865 136 V148" class="l"/>
+    <path d="M865 198 V210" class="l"/>
+    <text x="490" y="462" class="s" text-anchor="middle"><tspan lang="nl">WireGuard tussen de drie VPS'en · interne poorten alleen open voor de VPS die ze nodig heeft</tspan><tspan lang="en">WireGuard between the three VPSs · internal ports open only to the VPS that needs them</tspan></text>
+  </svg>
+  <div class="legenda"><span lang="nl">Blauw: lezende ingang. Groen: vastleggende ingang. Paars gestippeld: inloggen via Keycloak (OpenID Connect). Grijs gestippeld: het platform haalt sleutels bij OpenBao.</span><span lang="en">Blue: reading entrance. Green: recording entrance. Purple dashed: login via Keycloak (OpenID Connect). Grey dashed: the platform fetches keys from OpenBao.</span></div>
+  </div>
+
+  <h3><span lang="nl">Ontwerpkeuzes</span><span lang="en">Design choices</span></h3>
+  <div class="kaarten">
+    <div class="kaart"><h4><span lang="nl">Verdeeld naar vertrouwen</span><span lang="en">Split by trust</span></h4><p><span lang="nl">Drie servers: alleen de toegang staat aan internet. Gegevens (VPS 2) en sleutels (VPS 3) staan op verschillende machines.</span><span lang="en">Three servers: only the access server faces the internet. Data (VPS 2) and keys (VPS 3) live on different machines.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Onveranderlijke geschiedenis</span><span lang="en">Immutable history</span></h4><p><span lang="nl">Elke vastlegging is een gebeurtenis die de database niet laat wijzigen of wissen. Opslag met Object Lock.</span><span lang="en">Every change is an event the database will not let anyone alter or delete. Storage with Object Lock.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Versleutelen, niet zwartlakken</span><span lang="en">Encrypt, don't redact</span></h4><p><span lang="nl">Persoonsgegevens per document en per AVG-categorie versleuteld: art. 6 AES-256-GCM, art. 9 ChaCha20-Poly1305, art. 10 RSA-OAEP. Een sleutel vernietigen maakt ze onleesbaar.</span><span lang="en">Personal data encrypted per document and per GDPR category: art. 6 AES-256-GCM, art. 9 ChaCha20-Poly1305, art. 10 RSA-OAEP. Destroying a key makes them unreadable.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Gemeenten gescheiden</span><span lang="en">Municipalities separated</span></h4><p><span lang="nl">Eén installatie voor meer gemeenten; de database laat elke gemeente alleen haar eigen stukken zien.</span><span lang="en">One installation for several municipalities; the database shows each municipality only its own documents.</span></p></div>
+  </div>
+  <p><span lang="nl">De achtergrond staat in <i>XENA Deel II, De Office Assistent</i> en in de demo <a href="https://eha-1999.github.io/MIRA/">MIRA</a> (tabbladen Architectuur, Techniek en Groeipad).</span><span lang="en">The background is in <i>XENA Part II, The Office Assistant</i> and the <a href="https://eha-1999.github.io/MIRA/">MIRA</a> demo (Architecture, Engineering and Roadmap tabs).</span></p>
+</section>
+
+<!-- ============================ TECHNIEK ============================ -->
+<section id="techniek" role="tabpanel" aria-labelledby="t-techniek">
+  <h2><span lang="nl">Techniek</span><span lang="en">Engineering</span></h2>
+  <p class="lead"><span lang="nl">Alles open source. De assistent gebruikt geen diensten buiten de eigen servers: geen externe AI of cloud-API's.</span><span lang="en">Everything is open source. The assistant uses no services outside its own servers: no external AI or cloud APIs.</span></p>
+
+  <div class="tabel"><table>
+    <tr><th><span lang="nl">Laag</span><span lang="en">Layer</span></th><th><span lang="nl">Gebruikt</span><span lang="en">Uses</span></th></tr>
+    <tr><td><span lang="nl">Paneel</span><span lang="en">Panel</span></td><td>React 19, TypeScript, Vite; <a href="https://nldesignsystem.nl">NL Design System</a> (<span lang="nl">Utrecht-componenten, Haarlem-thema</span><span lang="en">Utrecht components, Haarlem theme</span>)</td></tr>
+    <tr><td><span lang="nl">Werkomgevingen</span><span lang="en">Environments</span></td><td><span lang="nl">Office.js; een LibreOffice-extensie in Python (UNO) met het paneel in WebKitGTK, WebView2 of WKWebView; Collabora Online via WOPI</span><span lang="en">Office.js; a LibreOffice extension in Python (UNO) with the panel in WebKitGTK, WebView2 or WKWebView; Collabora Online via WOPI</span></td></tr>
+    <tr><td><span lang="nl">Integratielaag</span><span lang="en">Integration layer</span></td><td>Next.js 16 (Node.js 22), jose (OpenID Connect)</td></tr>
+    <tr><td><span lang="nl">Platform</span><span lang="en">Platform</span></td><td><span lang="nl">Fastify; PostgreSQL 16 met row-level security per gemeente en een outbox; S3-opslag met Object Lock (<a href="https://github.com/pgsty/silo">SILO</a>); optioneel OpenSearch</span><span lang="en">Fastify; PostgreSQL 16 with row-level security per municipality and an outbox; S3 storage with Object Lock (<a href="https://github.com/pgsty/silo">SILO</a>); optional OpenSearch</span></td></tr>
+    <tr><td><span lang="nl">Sleutels</span><span lang="en">Keys</span></td><td>OpenBao (transit)</td></tr>
+    <tr><td><span lang="nl">Assistent-diensten</span><span lang="en">Assistant services</span></td><td>Fastify; <a href="https://github.com/ConductionNL/anonymiq-light">OpenAnonymiser</a> <span lang="nl">van Conduction (Presidio, spaCy, Nederlands taalmodel); oa-wcag in Java 21 met Apache POI</span><span lang="en">by Conduction (Presidio, spaCy, Dutch language model); oa-wcag in Java 21 with Apache POI</span></td></tr>
+    <tr><td><span lang="nl">Inloggen</span><span lang="en">Login</span></td><td>Keycloak 26</td></tr>
+    <tr><td><span lang="nl">Beheerportaal</span><span lang="en">Admin portal</span></td><td><span lang="nl">React en Vite, Fastify, eigen PostgreSQL</span><span lang="en">React and Vite, Fastify, its own PostgreSQL</span></td></tr>
+    <tr><td><span lang="nl">Uitrol</span><span lang="en">Deployment</span></td><td><span lang="nl">Docker Compose op drie VPS'en met Ubuntu 24.04; WireGuard ertussen; Caddy voor HTTPS</span><span lang="en">Docker Compose on three Ubuntu 24.04 VPSs; WireGuard between them; Caddy for HTTPS</span></td></tr>
+  </table></div>
+
+  <h3><span lang="nl">Inloggen met Keycloak</span><span lang="en">Login with Keycloak</span></h3>
+  <div class="kaarten">
+    <div class="kaart"><h4><span lang="nl">Tokens blijven op de server</span><span lang="en">Tokens stay on the server</span></h4><p><span lang="nl">De integratielaag is de enige client van Keycloak (authorization code flow met PKCE). De browser, Word en LibreOffice krijgen alleen een sessiecookie.</span><span lang="en">The integration layer is Keycloak's only client (authorization code flow with PKCE). The browser, Word and LibreOffice only get a session cookie.</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Wat het token zegt</span><span lang="en">What the token says</span></h4><p><span lang="nl">De gemeente (claim <code>gemeente</code>), de rol <code>medewerker</code> of <code>beheerder</code>, en het niveau voor persoonsgegevens <code>ppl-1</code> tot <code>ppl-3</code> (AVG art. 6, 9 en 10).</span><span lang="en">The municipality (claim <code>gemeente</code>), the role <code>medewerker</code> or <code>beheerder</code>, and the personal data level <code>ppl-1</code> to <code>ppl-3</code> (GDPR art. 6, 9 and 10).</span></p></div>
+    <div class="kaart"><h4><span lang="nl">Tweede factor</span><span lang="en">Second factor</span></h4><p><span lang="nl">Nieuwe gebruikers koppelen een authenticator-app; na tien foute wachtwoorden volgt een blokkade. Het beheerportaal eist de tweede factor en heeft een noodtoegang.</span><span lang="en">New users link an authenticator app; ten wrong passwords lead to a lockout. The admin portal requires the second factor and has an emergency entrance.</span></p></div>
+  </div>
+
+  <h3><span lang="nl">Standaarden</span><span lang="en">Standards</span></h3>
+  <p><span lang="nl">WCAG 2.2 AA · MDTO (metadata) · Woo-informatiecategorieën · AVG · OpenID Connect · WOPI · S3 Object Lock</span><span lang="en">WCAG 2.2 AA · MDTO (metadata) · Woo information categories · GDPR · OpenID Connect · WOPI · S3 Object Lock</span></p>
+</section>
+
+<!-- ============================ AAN DE SLAG ============================ -->
+<section id="aandeslag" role="tabpanel" aria-labelledby="t-aandeslag">
+  <h2><span lang="nl">Aan de slag</span><span lang="en">Get started</span></h2>
+  <p class="lead"><span lang="nl">Kies wat je wilt doen.</span><span lang="en">Choose what you want to do.</span></p>
+  <div class="rol">
+    <div class="kaart">
+      <h4><span lang="nl">Uitproberen</span><span lang="en">Try it out</span></h4>
+      <p><span lang="nl">Op een omgeving die al draait.</span><span lang="en">On an environment that is already running.</span></p>
+      <ol>
+        <li lang="nl">Vraag de beheerder om een testaccount.</li><li lang="en">Ask the administrator for a test account.</li>
+        <li lang="nl">Haal op de downloadpagina van die omgeving (<code>office.&lt;domein&gt;</code>) het Word-manifest of de LibreOffice-extensie.</li><li lang="en">Get the Word manifest or the LibreOffice extension from that environment's download page (<code>office.&lt;domain&gt;</code>).</li>
+        <li lang="nl">Volg de testronde.</li><li lang="en">Follow the test round.</li>
+      </ol>
+      <div class="knoppen"><a class="knop" href="https://github.com/digitaalgemeengoed/oa-uitrol/blob/main/TESTEN.md">TESTEN.md</a></div>
+    </div>
+    <div class="kaart">
+      <h4><span lang="nl">Inrichten</span><span lang="en">Set up</span></h4>
+      <p><span lang="nl">Een eigen omgeving op drie VPS'en. Ook voor wie geen systeembeheerder is: twee tot drie uur, scripts doen het werk.</span><span lang="en">Your own environment on three VPSs. Also for non-sysadmins: two to three hours, scripts do the work.</span></p>
+      <ol>
+        <li lang="nl">Drie VPS'en met Ubuntu 24.04 en een domein.</li><li lang="en">Three Ubuntu 24.04 VPSs and a domain.</li>
+        <li lang="nl">Volg het stappenplan (in het Nederlands).</li><li lang="en">Follow the step-by-step guide (in Dutch).</li>
+      </ol>
+      <div class="knoppen"><a class="knop" href="https://github.com/digitaalgemeengoed/oa-uitrol/blob/main/server/INRICHTING.md">INRICHTING.md</a></div>
+    </div>
+    <div class="kaart">
+      <h4><span lang="nl">Ontwikkelen</span><span lang="en">Develop</span></h4>
+      <p><span lang="nl">Alles op je eigen computer, zonder Keycloak.</span><span lang="en">Everything on your own computer, without Keycloak.</span></p>
+      <ol>
+        <li><code>git clone https://github.com/digitaalgemeengoed/oa-uitrol</code></li>
+        <li><code>./haal-op.sh digitaalgemeengoed</code></li>
+        <li><code>docker compose -f lokaal.yml up --build</code></li>
+        <li lang="nl">Open <code>http://localhost:3000</code> en kies een testgebruiker.</li><li lang="en">Open <code>http://localhost:3000</code> and pick a test user.</li>
+      </ol>
+      <div class="knoppen"><a class="knop" href="https://github.com/digitaalgemeengoed/oa-uitrol#op-%C3%A9%C3%A9n-machine">README</a></div>
+    </div>
+  </div>
+  <p><span lang="nl">Wat er per versie veranderd is, en welke server je moet bijwerken, staat in de <a href="https://github.com/digitaalgemeengoed/oa-uitrol/blob/main/CHANGELOG.md">CHANGELOG</a>. De documentatie is in het Nederlands.</span><span lang="en">What changed in each version, and which server to update, is in the <a href="https://github.com/digitaalgemeengoed/oa-uitrol/blob/main/CHANGELOG.md">CHANGELOG</a>. The documentation is in Dutch.</span></p>
+</section>
+
+<!-- ============================ REPOSITORIES ============================ -->
+<section id="repositories" role="tabpanel" aria-labelledby="t-repositories">
+  <h2>Repositories</h2>
+  <p class="lead"><span lang="nl">Elke laag heeft een eigen repository. <b>oa-uitrol</b> haalt ze allemaal op en zet ze samen neer.</span><span lang="en">Each layer has its own repository. <b>oa-uitrol</b> fetches them all and puts them together.</span></p>
+  <div class="tabel"><table>
+    <tr><th>Repository</th><th><span lang="nl">Wat</span><span lang="en">What</span></th></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-uitrol"><b>oa-uitrol</b></a></td><td><span lang="nl"><b>Begin hier.</b> Uitrol op één machine of drie VPS'en, inrichting, testronde, wijzigingen.</span><span lang="en"><b>Start here.</b> Deployment on one machine or three VPSs, setup, test round, changes.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-contract">oa-contract</a></td><td><span lang="nl">Het contract: inhoud, vermogens, bevindingen, gebeurtenissen.</span><span lang="en">The contract: content, capabilities, findings, events.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-kern">oa-kern</a></td><td><span lang="nl">De assistentkern met de modules, zonder framework.</span><span lang="en">The assistant core with its modules, framework-free.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-paneel">oa-paneel</a></td><td><span lang="nl">Het paneel in React met NL Design System.</span><span lang="en">The panel in React with NL Design System.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-adapters">oa-adapters</a></td><td><span lang="nl">Adapters per werkomgeving, de LibreOffice-extensie en de demo.</span><span lang="en">Adapters per environment, the LibreOffice extension and the demo.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-integratielaag">oa-integratielaag</a></td><td><span lang="nl">Next.js: inloggen en de twee ingangen.</span><span lang="en">Next.js: login and the two entrances.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-services">oa-services</a></td><td><span lang="nl">Assistent-diensten: toegankelijkheid en persoonsgegevens herkennen; lezen en rekenen, nooit vastleggen.</span><span lang="en">Assistant services: accessibility and recognising personal data; reading and computing, never recording.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-wcag">oa-wcag</a></td><td><span lang="nl">Toegankelijkheidscontrole van docx, xlsx en pptx.</span><span lang="en">Accessibility checks for docx, xlsx and pptx.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/opendop-mini">opendop-mini</a></td><td><span lang="nl">Minimaal platform: Object Service op PostgreSQL en S3.</span><span lang="en">Minimal platform: Object Service on PostgreSQL and S3.</span></td></tr>
+    <tr><td><a href="https://github.com/digitaalgemeengoed/oa-beheer">oa-beheer</a></td><td><span lang="nl">Beheerportaal: accounts, groepen, audit.</span><span lang="en">Admin portal: accounts, groups, audit.</span></td></tr>
+  </table></div>
+  <p><span lang="nl">Licentie: <a href="https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12">EUPL 1.2</a>. Bijdragen en vragen zijn welkom via de issues van de betreffende repository.</span><span lang="en">Licence: <a href="https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12">EUPL 1.2</a>. Contributions and questions are welcome through the issues of the relevant repository.</span></p>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Digitaal GemeenGoed · EUPL 1.2</span>
+    <a href="https://github.com/digitaalgemeengoed">GitHub</a>
+    <button type="button" id="colofon-knop"><span lang="nl">Colofon</span><span lang="en">Colophon</span></button>
+  </div>
+</footer>
+
+<dialog id="colofon" aria-labelledby="colofon-titel">
+  <div class="in">
+    <button type="button" class="sluit" id="colofon-sluit"><span lang="nl">Sluiten</span><span lang="en">Close</span></button>
+    <h2 id="colofon-titel"><span lang="nl">Colofon</span><span lang="en">Colophon</span></h2>
+    <p><span lang="nl">De Office Assistent is het werkende prototype van MIRA (<i>Modular Information &amp; Records Assistant</i>), uit <i>XENA Deel II, De Office Assistent</i>.</span><span lang="en">The Office Assistant is the working prototype of MIRA (<i>Modular Information &amp; Records Assistant</i>), from <i>XENA Part II, The Office Assistant</i>.</span></p>
+    <p><span lang="nl">Gemaakt door Erik Hoekstra, programma-architect en senior consultant, afdeling i-Ontwikkeling, Gemeente Haarlem, met assistentie van Claude (Anthropic).</span><span lang="en">Made by Erik Hoekstra, programme architect and senior consultant, i-Ontwikkeling department, Municipality of Haarlem, with assistance from Claude (Anthropic).</span></p>
+    <p><span lang="nl">Anonimiseren met OpenAnonymiser van Conduction. Componenten en thema van NL Design System.</span><span lang="en">Anonymisation with OpenAnonymiser by Conduction. Components and theme from NL Design System.</span></p>
+    <p>© 2026 Gemeente Haarlem · EUPL 1.2</p>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  var TALEN = ["nl", "en"];
+  function zetTaal(t, bewaar) {
+    if (TALEN.indexOf(t) < 0) t = "nl";
+    document.documentElement.lang = t;
+    document.querySelectorAll(".taal button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.taal === t)); });
+    document.querySelector('nav.tabs').setAttribute("aria-label", t === "en" ? "Sections" : "Onderdelen");
+    if (bewaar) { try { localStorage.setItem("dgg-taal", t); } catch (e) {} }
+  }
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  function toon(id, focus) {
+    var gevonden = false;
+    tabs.forEach(function (b) {
+      var aan = b.getAttribute("aria-controls") === id;
+      if (aan) gevonden = true;
+      b.setAttribute("aria-selected", String(aan));
+      b.tabIndex = aan ? 0 : -1;
+      document.getElementById(b.getAttribute("aria-controls")).classList.toggle("actief", aan);
+      if (aan && focus) b.focus();
+    });
+    if (!gevonden) toon("overzicht");
+  }
+  tabs.forEach(function (b, i) {
+    b.addEventListener("click", function () { toon(b.getAttribute("aria-controls")); history.replaceState(null, "", "#" + b.getAttribute("aria-controls")); window.scrollTo(0, 0); });
+    b.addEventListener("keydown", function (e) {
+      var n = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+      if (n === null) return;
+      e.preventDefault();
+      var d = tabs[(n + tabs.length) % tabs.length];
+      toon(d.getAttribute("aria-controls"), true);
+    });
+  });
+  document.querySelectorAll("[data-naar]").forEach(function (a) {
+    a.addEventListener("click", function (e) { e.preventDefault(); toon(a.dataset.naar); history.replaceState(null, "", "#" + a.dataset.naar); window.scrollTo(0, 0); });
+  });
+  document.querySelectorAll(".taal button").forEach(function (b) { b.addEventListener("click", function () { zetTaal(b.dataset.taal, true); }); });
+
+  // Adres: #en of #nl kiest de taal (zoals bij MIRA), #architectuur enz. een tabblad.
+  function vanAdres() {
+    var h = location.hash.replace("#", "");
+    if (TALEN.indexOf(h) >= 0) { zetTaal(h, true); return; }
+    if (h) toon(h);
+  }
+  var bewaard = null;
+  try { bewaard = localStorage.getItem("dgg-taal"); } catch (e) {}
+  zetTaal(bewaard || "nl", false);
+  toon("overzicht");
+  vanAdres();
+  window.addEventListener("hashchange", vanAdres);
+
+  var dlg = document.getElementById("colofon");
+  document.getElementById("colofon-knop").addEventListener("click", function () { dlg.showModal(); });
+  document.getElementById("colofon-sluit").addEventListener("click", function () { dlg.close(); });
+})();
+</script>
+</body>
+</html>
